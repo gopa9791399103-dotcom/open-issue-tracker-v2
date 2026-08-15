@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Plant Open Issue Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+    --gold:#F7A600;--gold2:#ffbe3d;--blue:#002060;--blue2:#003399;
+    --bg:#f5f6fa;--surface:#ffffff;--surface2:#f8f9fb;--surface3:#eef0f5;
+    --border:#e2e4ea;--border2:#d0d3dc;--text:#1a1e2e;--muted:#7a7f96;
+    --green:#16a34a;--red:#dc2626;--orange:#ea580c;--purple:#7c3aed;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+/* HEADER */
+.header{z-index:10;display:flex;align-items:center;padding:0 20px;height:60px;background:var(--blue);border-bottom:3px solid var(--gold);gap:12px;}
+.logo img{height:38px;flex-shrink:0;}
+.header-title{flex:1;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#fff;white-space:nowrap;}
+.header-title span{color:var(--gold);}
+.header-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.datetime{font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--gold);letter-spacing:1px;border:1px solid rgba(247,166,0,0.4);padding:4px 10px;border-radius:4px;background:rgba(247,166,0,0.1);white-space:nowrap;}
+.btn{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;border:none;cursor:pointer;padding:6px 13px;border-radius:4px;transition:all 0.2s;white-space:nowrap;}
+.btn-gold{background:var(--gold);color:var(--blue);}
+.btn-gold:hover{background:var(--gold2);}
+.btn-outline{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.3);}
+.btn-outline:hover{background:rgba(255,255,255,0.2);}
+.btn-pending{background:rgba(234,88,12,0.15);color:#ea580c;border:1px solid rgba(234,88,12,0.4);position:relative;}
+.btn-pending:hover{background:rgba(234,88,12,0.25);}
+.pending-badge{position:absolute;top:-7px;right:-7px;background:#ea580c;color:white;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+
+/* STATS BAR */
+.stats-bar{display:flex;background:var(--surface);border-bottom:1px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,0.06);}
+.stat-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:12px 16px;border-right:1px solid var(--border);}
+.stat-item:last-child{border-right:none;}
+.stat-label{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+.stat-value{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;line-height:1.2;}
+.stat-value.total{color:var(--blue);}
+.stat-value.open{color:var(--red);}
+.stat-value.progress{color:var(--orange);}
+.stat-value.closed{color:var(--green);}
+.stat-value.overdue{color:var(--purple);}
+.stat-value.pending-upd{color:var(--orange);}
+
+/* MAIN */
+.main{padding:24px 32px 80px;}
+
+/* TOOLBAR */
+.toolbar{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
+.search-box{flex:1;min-width:200px;position:relative;}
+.search-box input{width:100%;background:var(--surface);border:1px solid var(--border2);color:var(--text);padding:9px 12px 9px 36px;border-radius:4px;font-family:'Barlow',sans-serif;font-size:13px;box-shadow:0 1px 4px rgba(0,0,0,0.05);}
+.search-box input:focus{outline:none;border-color:var(--gold);}
+.search-box::before{content:'🔍';position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:12px;}
+.filter-select{background:var(--surface);border:1px solid var(--border2);color:var(--text);padding:9px 12px;border-radius:4px;font-family:'Barlow',sans-serif;font-size:13px;cursor:pointer;}
+.filter-select:focus{outline:none;border-color:var(--gold);}
+
+/* TABLE */
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.07);}
+table{width:100%;border-collapse:collapse;}
+thead tr{background:var(--blue);border-bottom:2px solid var(--gold);}
+th{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.85);padding:12px 14px;text-align:left;white-space:nowrap;}
+tbody tr{border-bottom:1px solid var(--border);transition:background 0.2s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:#fffbf0;}
+td{padding:12px 14px;font-size:13px;vertical-align:middle;color:var(--text);}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:5px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:3px 10px;border-radius:12px;}
+.badge-open{background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;}
+.badge-progress{background:#ffedd5;color:#ea580c;border:1px solid #fdba74;}
+.badge-closed{background:#dcfce7;color:#16a34a;border:1px solid #86efac;}
+.badge-overdue{background:#ede9fe;color:#7c3aed;border:1px solid #c4b5fd;}
+.priority{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:2px 8px;border-radius:3px;}
+.p-high{background:#fee2e2;color:#dc2626;}
+.p-medium{background:#ffedd5;color:#ea580c;}
+.p-low{background:#dcfce7;color:#16a34a;}
+
+/* PROGRESS */
+.progress-wrap{display:flex;align-items:center;gap:8px;}
+.progress-bar{flex:1;height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;min-width:60px;}
+.progress-fill{height:100%;border-radius:3px;transition:width 0.3s;}
+.progress-text{font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--muted);white-space:nowrap;}
+
+/* ACTION BUTTONS */
+.action-btn{background:var(--surface);border:1px solid var(--border2);color:var(--muted);padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;transition:all 0.2s;margin-right:4px;}
+.action-btn:hover{border-color:var(--gold);color:var(--blue);}
+.action-btn.update{border-color:#86efac;color:var(--green);}
+.action-btn.update:hover{background:#dcfce7;}
+.action-btn.mail{border-color:#fcd34d;color:#b45309;}
+.action-btn.mail:hover{background:#fffbeb;}
+.action-btn.delete{border-color:#fca5a5;color:var(--red);}
+.action-btn.delete:hover{background:#fee2e2;}
+
+/* OVERDUE ROW */
+.overdue-row{background:#faf5ff !important;}
+.target-date.overdue{color:var(--purple);font-weight:600;}
+.target-date.due-soon{color:var(--orange);font-weight:600;}
+.target-date.ok{color:var(--green);}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(3px);}
+.modal-overlay.active{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:28px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;animation:modalIn 0.25s ease;box-shadow:0 20px 60px rgba(0,0,0,0.2);}
+.modal-lg{max-width:800px;}
+@keyframes modalIn{from{opacity:0;transform:scale(0.95);}to{opacity:1;transform:scale(1);}}
+.modal-title{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--blue);margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid var(--gold);}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-group{display:flex;flex-direction:column;gap:5px;}
+.form-group label{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+.form-group input,.form-group select,.form-group textarea{background:var(--surface);border:1px solid var(--border2);color:var(--text);padding:9px 12px;border-radius:4px;font-family:'Barlow',sans-serif;font-size:13px;}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--gold);}
+.form-group textarea{resize:vertical;min-height:80px;}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);}
+
+/* UPDATE HISTORY */
+.update-history{max-height:200px;overflow-y:auto;margin-bottom:14px;}
+.update-entry{padding:10px 12px;background:var(--surface2);border-radius:4px;margin-bottom:8px;border-left:3px solid var(--gold);}
+.update-entry.approved{border-left-color:var(--green);}
+.update-entry.rejected{border-left-color:var(--red);}
+.update-entry.pending-entry{border-left-color:var(--orange);}
+.update-date{font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--muted);margin-bottom:4px;}
+.update-text{font-size:13px;color:var(--text);}
+.update-by{font-size:11px;color:var(--blue);margin-top:4px;font-weight:600;}
+
+/* PENDING UPDATES TABLE */
+.pending-card{background:var(--surface);border:1px solid #fdba74;border-radius:8px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(234,88,12,0.08);}
+.pending-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.pending-issue-title{font-weight:600;font-size:14px;color:var(--blue);}
+.pending-meta{font-size:12px;color:var(--muted);margin-top:2px;}
+.pending-remark{font-size:13px;color:var(--text);background:var(--surface2);padding:10px 12px;border-radius:6px;margin:10px 0;border-left:3px solid var(--orange);}
+.pending-proposed{display:flex;gap:16px;margin-bottom:10px;}
+.proposed-item{font-size:12px;}
+.proposed-label{color:var(--muted);font-weight:600;}
+.pending-actions{display:flex;gap:8px;}
+.btn-approve{background:#dcfce7;color:#16a34a;border:1px solid #86efac;padding:7px 16px;border-radius:6px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;cursor:pointer;letter-spacing:1px;}
+.btn-approve:hover{background:#bbf7d0;}
+.btn-reject{background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;padding:7px 16px;border-radius:6px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;cursor:pointer;letter-spacing:1px;}
+.btn-reject:hover{background:#fecaca;}
+.admin-remark-input{width:100%;margin-top:8px;padding:8px 10px;border:1px solid var(--border2);border-radius:4px;font-family:'Barlow',sans-serif;font-size:12px;}
+.admin-remark-input:focus{outline:none;border-color:var(--gold);}
+
+/* NOTICE BANNER */
+.notice-banner{background:#fffbeb;border:1px solid #fcd34d;color:#92400e;padding:10px 16px;border-radius:6px;font-size:13px;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted);}
+.empty-state .icon{font-size:40px;margin-bottom:10px;}
+
+/* TICKER */
+.ticker-wrap{position:fixed;bottom:0;left:0;right:0;height:36px;background:var(--blue);border-top:3px solid var(--gold);display:flex;align-items:center;overflow:hidden;z-index:100;}
+.ticker-label{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);background:rgba(0,0,0,0.25);padding:0 14px;height:100%;display:flex;align-items:center;border-right:1px solid rgba(247,166,0,0.4);white-space:nowrap;flex-shrink:0;}
+.ticker-inner{overflow:hidden;flex:1;}
+.ticker-inner span{display:inline-block;white-space:nowrap;padding-left:100%;font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:2px;color:rgba(255,255,255,0.85);animation:ticker 30s linear infinite;}
+@keyframes ticker{0%{transform:translateX(0);}100%{transform:translateX(-100%);}}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+    <div class="logo"><img src="{{ url_for('static', filename='logo.png') }}"></div>
+    <div class="header-title">Plant Open <span>Issue Tracker</span></div>
+    <div class="header-right">
+        <div class="datetime" id="datetime">--</div>
+        <span id="userBadge" style="font-family:'Barlow Condensed';font-size:11px;letter-spacing:1px;padding:4px 10px;border-radius:12px;border:1px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.8);white-space:nowrap;"></span>
+        <!-- Admin only buttons -->
+        <button class="btn btn-pending" id="pendingBtn" onclick="openPendingModal()" style="display:none;">
+            ⏳ Approvals <span class="pending-badge" id="pendingBadge">0</span>
+        </button>
+        <button class="btn btn-gold" id="addIssueBtn" onclick="openAddModal()" style="display:none;">+ Add Issue</button>
+        <button class="btn btn-outline" onclick="location.href='/report'">📊 Report</button>
+        <button class="btn btn-outline" onclick="location.href='/logout'">Logout</button>
+    </div>
+</div>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+    <div class="stat-item"><div class="stat-label">Total</div><div class="stat-value total" id="stat-total">0</div></div>
+    <div class="stat-item"><div class="stat-label">Open</div><div class="stat-value open" id="stat-open">0</div></div>
+    <div class="stat-item"><div class="stat-label">In Progress</div><div class="stat-value progress" id="stat-progress">0</div></div>
+    <div class="stat-item"><div class="stat-label">Closed</div><div class="stat-value closed" id="stat-closed">0</div></div>
+    <div class="stat-item"><div class="stat-label">Overdue</div><div class="stat-value overdue" id="stat-overdue">0</div></div>
+    <div class="stat-item" id="pendingStatItem" style="display:none;"><div class="stat-label">Pending Approval</div><div class="stat-value pending-upd" id="stat-pending-upd">0</div></div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+    <div class="toolbar">
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search issues, responsibility, department..." oninput="filterIssues()">
+        </div>
+        <select class="filter-select" id="filterStatus" onchange="filterIssues()">
+            <option value="">All Status</option>
+            <option value="Open">Open</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Closed">Closed</option>
+            <option value="Overdue">Overdue</option>
+        </select>
+        <select class="filter-select" id="filterPriority" onchange="filterIssues()">
+            <option value="">All Priority</option>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+        </select>
+        <select class="filter-select" id="filterDept" onchange="filterIssues()">
+            <option value="">All Departments</option>
+            <option>Quality</option><option>Production</option><option>Maintenance</option>
+            <option>Safety</option><option>Store</option><option>HR</option>
+            <option>Dispatch</option><option>Tooling</option>
+        </select>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th><th>Issue</th><th>Dept</th><th>Priority</th>
+                    <th>Responsible</th><th>Target</th><th>Status</th>
+                    <th>Progress</th><th>Last Update</th><th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="issueBody">
+                <tr><td colspan="10"><div class="empty-state"><div class="icon">📋</div><p>Loading...</p></div></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ── ADD/EDIT ISSUE MODAL (admin only) ── -->
+<div class="modal-overlay" id="addModal">
+    <div class="modal">
+        <div class="modal-title" id="modalTitle">Add New Issue</div>
+        <input type="hidden" id="editIssueId">
+        <div class="form-grid">
+            <div class="form-group" style="grid-column:1/-1;"><label>Issue Description *</label><textarea id="issueDesc" rows="2" placeholder="Describe the issue..."></textarea></div>
+            <div class="form-group"><label>Department *</label>
+                <select id="issueDept"><option value="">Select</option>
+                <option>Quality</option><option>Production</option><option>Maintenance</option>
+                <option>Safety</option><option>Store</option><option>HR</option>
+                <option>Dispatch</option><option>Tooling</option><option>Management</option></select>
+            </div>
+            <div class="form-group"><label>Priority *</label>
+                <select id="issuePriority"><option value="">Select</option>
+                <option>High</option><option>Medium</option><option>Low</option></select>
+            </div>
+            <div class="form-group"><label>Responsible Person *</label><input type="text" id="issueResponsible" placeholder="Full name"></div>
+            <div class="form-group"><label>Email *</label><input type="email" id="issueEmail" placeholder="email@company.com"></div>
+            <div class="form-group"><label>WhatsApp No.</label><input type="text" id="issuePhone" placeholder="+91XXXXXXXXXX"></div>
+            <div class="form-group"><label>Target Date *</label><input type="date" id="issueTargetDate"></div>
+            <div class="form-group"><label>Status</label>
+                <select id="issueStatus"><option>Open</option><option>In Progress</option><option>Closed</option></select>
+            </div>
+            <div class="form-group"><label>Progress %</label><input type="number" id="issueProgress" min="0" max="100" value="0"></div>
+            <div class="form-group" style="grid-column:1/-1;"><label>Remark</label><input type="text" id="issueRemark" placeholder="Initial remarks..."></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" style="color:#555;border-color:#ccc;background:#f5f5f5;" onclick="closeModal('addModal')">Cancel</button>
+            <button class="btn btn-gold" onclick="saveIssue()">Save Issue</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── UPDATE MODAL (both roles) ── -->
+<div class="modal-overlay" id="updateModal">
+    <div class="modal">
+        <div class="modal-title" id="updateModalTitle">📝 Submit Progress Update</div>
+        <input type="hidden" id="updateIssueId">
+
+        <div id="viewerNotice" class="notice-banner" style="display:none;">
+            ⓘ Your update will be sent to admin for approval before it reflects on the dashboard.
+        </div>
+
+        <div class="update-history" id="updateHistory"></div>
+
+        <div class="form-grid">
+            <div class="form-group"><label>Proposed Status</label>
+                <select id="updateStatus"><option>Open</option><option>In Progress</option><option>Closed</option></select>
+            </div>
+            <div class="form-group"><label>Progress % (0–100)</label>
+                <input type="number" id="updateProgress" min="0" max="100">
+            </div>
+            <div class="form-group" style="grid-column:1/-1;"><label>Update Remarks *</label>
+                <textarea id="updateRemark" rows="3" placeholder="What was done? What is pending?"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" style="color:#555;border-color:#ccc;background:#f5f5f5;" onclick="closeModal('updateModal')">Cancel</button>
+            <button class="btn btn-gold" onclick="saveUpdate()" id="submitUpdateBtn">Submit Update</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── PENDING APPROVALS MODAL (admin only) ── -->
+<div class="modal-overlay" id="pendingModal">
+    <div class="modal modal-lg">
+        <div class="modal-title">⏳ Pending Approvals</div>
+        <div id="pendingList"><div class="empty-state"><div class="icon">⏳</div><p>Loading...</p></div></div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" style="color:#555;border-color:#ccc;background:#f5f5f5;" onclick="closeModal('pendingModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── DECISION CONFIRM MODAL ── -->
+<div class="modal-overlay" id="decisionModal">
+    <div class="modal" style="max-width:420px;">
+        <div class="modal-title" id="decisionTitle">Confirm</div>
+        <input type="hidden" id="decisionPendingId">
+        <input type="hidden" id="decisionType">
+        <div class="form-group">
+            <label>Admin Remark (optional)</label>
+            <textarea id="adminRemark" rows="2" placeholder="Add a note for sujan..."></textarea>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" style="color:#555;border-color:#ccc;background:#f5f5f5;" onclick="closeModal('decisionModal')">Cancel</button>
+            <button class="btn btn-gold" id="confirmDecisionBtn" onclick="confirmDecision()">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── MAIL MODAL (admin only) ── -->
+<div class="modal-overlay" id="mailModal">
+    <div class="modal">
+        <div class="modal-title">📧 Send Reminder</div>
+        <input type="hidden" id="mailIssueId">
+        <div class="form-group"><label>To</label><input type="email" id="mailTo" readonly style="opacity:0.7;"></div>
+        <div class="form-group"><label>Subject</label><input type="text" id="mailSubject"></div>
+        <div class="form-group"><label>Message</label><textarea id="mailBody" rows="6"></textarea></div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" style="color:#555;border-color:#ccc;background:#f5f5f5;" onclick="closeModal('mailModal')">Cancel</button>
+            <button class="btn btn-gold" onclick="sendMail()">📧 Send</button>
+        </div>
+    </div>
+</div>
+
+<!-- TICKER -->
+<div class="ticker-wrap">
+    <div class="ticker-label">● LIVE</div>
+    <div class="ticker-inner"><span id="tickerText">Sujan Continental AVS Pvt Ltd | Plant Open Issue Tracker</span></div>
+</div>
+
+<script>
+let allIssues = [];
+let userRole  = 'viewer';
+let userName  = '';
+
+// ── TIME ──────────────────────────────────────────────────────
+function updateTime(){
+    document.getElementById('datetime').textContent =
+        new Date().toLocaleDateString('en-IN')+'  |  '+new Date().toLocaleTimeString('en-IN');
+}
+setInterval(updateTime,1000); updateTime();
+
+// ── INIT ──────────────────────────────────────────────────────
+async function initApp(){
+    const res  = await fetch('/get_role');
+    const data = await res.json();
+    userRole   = data.role;
+    userName   = data.username;
+
+    // User badge
+    const badge = document.getElementById('userBadge');
+    if(userRole === 'admin'){
+        badge.textContent = '👤 '+userName+' (Admin)';
+        badge.style.background = 'rgba(247,166,0,0.2)';
+        badge.style.color = '#F7A600';
+        document.getElementById('addIssueBtn').style.display = 'inline-block';
+        document.getElementById('pendingBtn').style.display  = 'inline-block';
+        document.getElementById('pendingStatItem').style.display = 'flex';
+    } else {
+        badge.textContent = '👁 '+userName+' (Viewer)';
+        badge.style.background = 'rgba(34,197,94,0.15)';
+        badge.style.color = '#86efac';
+    }
+
+    await loadIssues();
+    if(userRole === 'admin') pollPending();
+}
+
+// ── LOAD ISSUES ───────────────────────────────────────────────
+async function loadIssues(){
+    const res = await fetch('/get_issues');
+    allIssues = await res.json();
+    renderTable(allIssues);
+    updateStats(allIssues);
+    updateTicker(allIssues);
+}
+
+// ── RENDER TABLE ──────────────────────────────────────────────
+function renderTable(issues){
+    const tbody = document.getElementById('issueBody');
+    if(!issues.length){
+        tbody.innerHTML='<tr><td colspan="10"><div class="empty-state"><div class="icon">📋</div><p>No issues found</p></div></td></tr>';
+        return;
+    }
+    const today = new Date(); today.setHours(0,0,0,0);
+
+    tbody.innerHTML = issues.map(issue => {
+        const target = new Date(issue.target_date);
+        const diff   = Math.ceil((target - today) / 86400000);
+        let dateClass = 'ok', statusOverride = issue.status;
+        if(issue.status !== 'Closed'){
+            if(diff < 0){ dateClass='overdue'; statusOverride='Overdue'; }
+            else if(diff <= 3){ dateClass='due-soon'; }
+        }
+        const statusBadge = {
+            'Open':        '<span class="badge badge-open">● Open</span>',
+            'In Progress': '<span class="badge badge-progress">◑ In Progress</span>',
+            'Closed':      '<span class="badge badge-closed">✓ Closed</span>',
+            'Overdue':     '<span class="badge badge-overdue">⚠ Overdue</span>',
+        }[statusOverride] || '';
+        const pBadge   = {'High':'p-high','Medium':'p-medium','Low':'p-low'}[issue.priority]||'';
+        const prog     = issue.progress||0;
+        const progColor= prog>=100?'#16a34a':prog>=50?'#ea580c':'#dc2626';
+        const rowClass = statusOverride==='Overdue'?'overdue-row':'';
+        const diffLabel= diff<0&&issue.status!=='Closed'?`<br><span style="font-size:10px;">(${Math.abs(diff)}d overdue)</span>`:diff<=3&&diff>=0&&issue.status!=='Closed'?`<br><span style="font-size:10px;">(${diff}d left)</span>`:'';
+
+        // Actions — both roles get Update; only admin gets Mail, Edit, Delete
+        const adminActions = userRole==='admin' ? `
+            <button class="action-btn mail" onclick="openMailModal(${issue.id})">📧</button>
+            <button class="action-btn" onclick="openEditModal(${issue.id})">✏️</button>
+            <button class="action-btn delete" onclick="deleteIssue(${issue.id})">🗑️</button>` : '';
+
+        return `<tr class="${rowClass}">
+            <td><span style="font-family:'Barlow Condensed';font-size:12px;color:#7a7f96;">${issue.id}</span></td>
+            <td style="max-width:200px;">
+                <div style="font-weight:500;line-height:1.4;color:#1a1e2e;">${issue.description}</div>
+                <div style="font-size:11px;color:#7a7f96;margin-top:2px;">${issue.remark||''}</div>
+            </td>
+            <td><span style="font-family:'Barlow Condensed';font-size:12px;letter-spacing:1px;">${issue.department}</span></td>
+            <td><span class="priority ${pBadge}">${issue.priority}</span></td>
+            <td style="font-size:13px;">${issue.responsible}<br><span style="font-size:11px;color:#7a7f96;">${issue.email}</span></td>
+            <td><span class="target-date ${dateClass}">${issue.target_date}${diffLabel}</span></td>
+            <td>${statusBadge}</td>
+            <td>
+                <div class="progress-wrap">
+                    <div class="progress-bar"><div class="progress-fill" style="width:${prog}%;background:${progColor};"></div></div>
+                    <span class="progress-text">${prog}%</span>
+                </div>
+            </td>
+            <td><span style="font-size:11px;color:#7a7f96;">${issue.last_update||'—'}</span></td>
+            <td style="white-space:nowrap;">
+                <button class="action-btn update" onclick="openUpdateModal(${issue.id})">📝 Update</button>
+                ${adminActions}
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+// ── STATS ─────────────────────────────────────────────────────
+function updateStats(issues){
+    const today = new Date(); today.setHours(0,0,0,0);
+    let open=0,prog=0,closed=0,overdue=0;
+    issues.forEach(i=>{
+        const t=new Date(i.target_date);
+        if(i.status==='Closed') closed++;
+        else if(t<today) overdue++;
+        else if(i.status==='In Progress') prog++;
+        else open++;
+    });
+    document.getElementById('stat-total').textContent   = issues.length;
+    document.getElementById('stat-open').textContent    = open;
+    document.getElementById('stat-progress').textContent= prog;
+    document.getElementById('stat-closed').textContent  = closed;
+    document.getElementById('stat-overdue').textContent = overdue;
+}
+
+// ── TICKER ────────────────────────────────────────────────────
+function updateTicker(issues){
+    const today   = new Date(); today.setHours(0,0,0,0);
+    const overdue = issues.filter(i=>i.status!=='Closed'&&new Date(i.target_date)<today);
+    let text = `Sujan Continental AVS Pvt Ltd &nbsp;|&nbsp; Plant Open Issue Tracker &nbsp;|&nbsp; Total: ${issues.length} &nbsp;·&nbsp; Closed: ${issues.filter(i=>i.status==='Closed').length} &nbsp;·&nbsp; Overdue: ${overdue.length}`;
+    if(overdue.length) text+=' &nbsp;|&nbsp; ⚠ OVERDUE: '+overdue.map(i=>`${i.description.substring(0,30)}... (${i.responsible})`).join(' &nbsp;·&nbsp; ');
+    document.getElementById('tickerText').innerHTML=text;
+}
+
+// ── FILTER ────────────────────────────────────────────────────
+function filterIssues(){
+    const search   = document.getElementById('searchInput').value.toLowerCase();
+    const status   = document.getElementById('filterStatus').value;
+    const priority = document.getElementById('filterPriority').value;
+    const dept     = document.getElementById('filterDept').value;
+    const today    = new Date(); today.setHours(0,0,0,0);
+    const filtered = allIssues.filter(i=>{
+        const ms = !search||i.description.toLowerCase().includes(search)||i.responsible.toLowerCase().includes(search)||i.department.toLowerCase().includes(search);
+        let es = i.status;
+        if(i.status!=='Closed'&&new Date(i.target_date)<today) es='Overdue';
+        return ms&&(!status||es===status)&&(!priority||i.priority===priority)&&(!dept||i.department===dept);
+    });
+    renderTable(filtered);
+}
+
+// ── ADD/EDIT ISSUE (admin) ────────────────────────────────────
+function openAddModal(){
+    document.getElementById('modalTitle').textContent='Add New Issue';
+    document.getElementById('editIssueId').value='';
+    ['issueDesc','issueResponsible','issueEmail','issuePhone','issueRemark'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('issueDept').value='';
+    document.getElementById('issuePriority').value='';
+    document.getElementById('issueStatus').value='Open';
+    document.getElementById('issueProgress').value='0';
+    document.getElementById('issueTargetDate').value='';
+    document.getElementById('addModal').classList.add('active');
+}
+
+function openEditModal(id){
+    const issue=allIssues.find(i=>i.id===id); if(!issue) return;
+    document.getElementById('modalTitle').textContent='Edit Issue #'+id;
+    document.getElementById('editIssueId').value=id;
+    document.getElementById('issueDesc').value=issue.description;
+    document.getElementById('issueDept').value=issue.department;
+    document.getElementById('issuePriority').value=issue.priority;
+    document.getElementById('issueResponsible').value=issue.responsible;
+    document.getElementById('issueEmail').value=issue.email;
+    document.getElementById('issueTargetDate').value=issue.target_date;
+    document.getElementById('issueStatus').value=issue.status;
+    document.getElementById('issueProgress').value=issue.progress;
+    document.getElementById('issueRemark').value=issue.remark||'';
+    document.getElementById('addModal').classList.add('active');
+}
+
+async function saveIssue(){
+    const id=document.getElementById('editIssueId').value;
+    const payload={
+        description:document.getElementById('issueDesc').value.trim(),
+        department: document.getElementById('issueDept').value,
+        priority:   document.getElementById('issuePriority').value,
+        responsible:document.getElementById('issueResponsible').value.trim(),
+        email:      document.getElementById('issueEmail').value.trim(),
+        phone:      document.getElementById('issuePhone').value.trim(),
+        target_date:document.getElementById('issueTargetDate').value,
+        status:     document.getElementById('issueStatus').value,
+        progress:   parseInt(document.getElementById('issueProgress').value)||0,
+        remark:     document.getElementById('issueRemark').value.trim(),
+    };
+    if(!payload.description||!payload.department||!payload.priority||!payload.responsible||!payload.email||!payload.target_date){
+        alert('Please fill all required fields.'); return;
+    }
+    const res=await fetch(id?`/update_issue/${id}`:'/add_issue',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const r=await res.json();
+    if(r.success){closeModal('addModal');loadIssues();}else alert('Error: '+r.message);
+}
+
+// ── UPDATE MODAL (both roles) ─────────────────────────────────
+async function openUpdateModal(id){
+    document.getElementById('updateIssueId').value=id;
+    const issue=allIssues.find(i=>i.id===id);
+    document.getElementById('updateStatus').value=issue.status;
+    document.getElementById('updateProgress').value=issue.progress||0;
+    document.getElementById('updateRemark').value='';
+
+    // Show viewer notice
+    const notice=document.getElementById('viewerNotice');
+    if(userRole==='viewer'){
+        notice.style.display='flex';
+        document.getElementById('updateModalTitle').textContent='📤 Submit Progress Update';
+        document.getElementById('submitUpdateBtn').textContent='Submit for Approval';
+    } else {
+        notice.style.display='none';
+        document.getElementById('updateModalTitle').textContent='📝 Update Issue #'+id;
+        document.getElementById('submitUpdateBtn').textContent='Save Update';
+    }
+
+    // Load history
+    const res=await fetch(`/get_issue_updates/${id}`);
+    const updates=await res.json();
+    const histEl=document.getElementById('updateHistory');
+    if(updates.length){
+        histEl.innerHTML='<div style="font-family:\'Barlow Condensed\';font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#7a7f96;margin-bottom:8px;">Update History</div>'+
+        updates.map(u=>{
+            const cls=u.approval_status==='Approved'?'approved':u.approval_status==='Rejected'?'rejected':'pending-entry';
+            const icon=u.approval_status==='Approved'?'✅':u.approval_status==='Rejected'?'❌':'⏳';
+            return `<div class="update-entry ${cls}">
+                <div class="update-date">${u.updated_at} &nbsp;|&nbsp; ${icon} ${u.approval_status}</div>
+                <div class="update-text">${u.remark}</div>
+                <div class="update-by">— ${u.updated_by} &nbsp;|&nbsp; ${u.progress}% &nbsp;|&nbsp; ${u.status}</div>
+            </div>`;
+        }).join('');
+    } else {
+        histEl.innerHTML='<div style="color:#7a7f96;font-size:12px;margin-bottom:8px;">No updates yet.</div>';
+    }
+    document.getElementById('updateModal').classList.add('active');
+}
+
+async function saveUpdate(){
+    const id=document.getElementById('updateIssueId').value;
+    const payload={
+        status:   document.getElementById('updateStatus').value,
+        progress: parseInt(document.getElementById('updateProgress').value)||0,
+        remark:   document.getElementById('updateRemark').value.trim(),
+    };
+    if(!payload.remark){alert('Please enter update remarks.');return;}
+    const res=await fetch(`/submit_update/${id}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const r=await res.json();
+    alert(r.message);
+    if(r.success){closeModal('updateModal');loadIssues();}
+}
+
+// ── PENDING APPROVALS (admin) ─────────────────────────────────
+async function openPendingModal(){
+    document.getElementById('pendingModal').classList.add('active');
+    await loadPendingList();
+}
+
+async function loadPendingList(){
+    const res=await fetch('/get_pending_updates');
+    const list=await res.json();
+    const el=document.getElementById('pendingList');
+    if(!list.length){
+        el.innerHTML='<div class="empty-state"><div class="icon">✅</div><p>No pending approvals</p></div>';
+        return;
+    }
+    el.innerHTML=list.map(p=>`
+    <div class="pending-card" id="pcard-${p.id}">
+        <div class="pending-card-header">
+            <div>
+                <div class="pending-issue-title">Issue #${p.issue_id}: ${p.issue_desc}</div>
+                <div class="pending-meta">${p.department} &nbsp;·&nbsp; Submitted by <b>${p.submitted_by}</b> on ${p.submitted_at}</div>
+            </div>
+        </div>
+        <div class="pending-proposed">
+            <div class="proposed-item"><span class="proposed-label">Current: </span>${p.current_status} (${p.current_progress}%)</div>
+            <div style="color:#7a7f96;">→</div>
+            <div class="proposed-item"><span class="proposed-label">Proposed: </span>${p.proposed_status} (${p.proposed_progress}%)</div>
+        </div>
+        <div class="pending-remark">${p.remark}</div>
+        <input class="admin-remark-input" id="ar-${p.id}" type="text" placeholder="Admin remark (optional)...">
+        <div class="pending-actions" style="margin-top:10px;">
+            <button class="btn-approve" onclick="openDecision(${p.id},'approve')">✅ Approve</button>
+            <button class="btn-reject"  onclick="openDecision(${p.id},'reject')">❌ Reject</button>
+        </div>
+    </div>`).join('');
+    document.getElementById('stat-pending-upd').textContent=list.length;
+}
+
+function openDecision(pendingId, type){
+    document.getElementById('decisionPendingId').value=pendingId;
+    document.getElementById('decisionType').value=type;
+    document.getElementById('adminRemark').value=document.getElementById('ar-'+pendingId)?.value||'';
+    document.getElementById('decisionTitle').textContent=type==='approve'?'✅ Approve Update':'❌ Reject Update';
+    const btn=document.getElementById('confirmDecisionBtn');
+    btn.style.background=type==='approve'?'#16a34a':'#dc2626';
+    btn.textContent=type==='approve'?'Confirm Approve':'Confirm Reject';
+    document.getElementById('decisionModal').classList.add('active');
+}
+
+async function confirmDecision(){
+    const pendingId=document.getElementById('decisionPendingId').value;
+    const type=document.getElementById('decisionType').value;
+    const adminRemark=document.getElementById('adminRemark').value.trim();
+    const url=type==='approve'?`/approve_update/${pendingId}`:`/reject_update/${pendingId}`;
+    const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({admin_remark:adminRemark})});
+    const r=await res.json();
+    alert(r.message);
+    closeModal('decisionModal');
+    await loadPendingList();
+    await loadIssues();
+    pollPending();
+}
+
+// Poll pending count every 30s for admin
+async function pollPending(){
+    const res=await fetch('/get_pending_count');
+    const d=await res.json();
+    const count=d.count||0;
+    const badge=document.getElementById('pendingBadge');
+    if(badge){badge.textContent=count;badge.style.display=count>0?'flex':'none';}
+    if(userRole==='admin') setTimeout(pollPending,30000);
+}
+
+// ── MAIL (admin) ───────────────────────────────────────────────
+function openMailModal(id){
+    const issue=allIssues.find(i=>i.id===id); if(!issue) return;
+    document.getElementById('mailIssueId').value=id;
+    document.getElementById('mailTo').value=issue.email;
+    document.getElementById('mailSubject').value=`Action Required: Issue #${id} — ${issue.description.substring(0,50)}`;
+    document.getElementById('mailBody').value=
+`Dear ${issue.responsible},
+
+This is a reminder regarding the open issue assigned to you:
+
+Issue #${id}: ${issue.description}
+Department : ${issue.department}
+Priority   : ${issue.priority}
+Target Date: ${issue.target_date}
+Status     : ${issue.status}
+Progress   : ${issue.progress}%
+
+Please update the progress at your earliest convenience.
+
+Regards,
+Sujan Continental AVS Pvt Ltd`;
+    document.getElementById('mailModal').classList.add('active');
+}
+
+async function sendMail(){
+    const id=document.getElementById('mailIssueId').value;
+    const payload={to:document.getElementById('mailTo').value,subject:document.getElementById('mailSubject').value,body:document.getElementById('mailBody').value};
+    const res=await fetch(`/send_issue_mail/${id}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const r=await res.json();
+    alert(r.message);
+    if(r.success) closeModal('mailModal');
+}
+
+// ── DELETE (admin) ─────────────────────────────────────────────
+async function deleteIssue(id){
+    if(!confirm(`Delete Issue #${id}? This cannot be undone.`)) return;
+    const res=await fetch(`/delete_issue/${id}`,{method:'DELETE'});
+    const r=await res.json();
+    if(r.success) loadIssues(); else alert('Error: '+r.message);
+}
+
+// ── CLOSE MODAL ───────────────────────────────────────────────
+function closeModal(id){document.getElementById(id).classList.remove('active');}
+document.querySelectorAll('.modal-overlay').forEach(el=>{
+    el.addEventListener('click',e=>{if(e.target===el) el.classList.remove('active');});
+});
+
+// ── INIT ──────────────────────────────────────────────────────
+window.onload=initApp;
+</script>
+</body>
+</html>

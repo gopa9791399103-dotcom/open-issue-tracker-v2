@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Plant Open Issue Tracker — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Barlow',sans-serif;background:#f5f6fa;min-height:100vh;display:flex;flex-direction:column;}
+
+.top-bar{height:5px;background:linear-gradient(90deg,#002060,#F7A600,#002060);}
+
+.login-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px;}
+
+.login-card{
+    background:#ffffff;
+    border-radius:12px;
+    box-shadow:0 8px 40px rgba(0,32,96,0.12);
+    width:100%;
+    max-width:420px;
+    overflow:hidden;
+}
+
+.login-header{
+    background:#002060;
+    padding:32px 36px 28px;
+    text-align:center;
+}
+
+.login-header img{height:50px;margin-bottom:14px;}
+
+.login-header h1{
+    font-family:'Barlow Condensed',sans-serif;
+    font-size:20px;
+    font-weight:700;
+    letter-spacing:3px;
+    text-transform:uppercase;
+    color:#ffffff;
+    margin:0;
+}
+
+.login-header p{
+    font-size:12px;
+    color:rgba(255,255,255,0.6);
+    letter-spacing:1px;
+    margin-top:6px;
+}
+
+.gold-bar{height:4px;background:#F7A600;}
+
+.login-body{padding:32px 36px 36px;}
+
+.form-group{margin-bottom:18px;}
+
+.form-group label{
+    display:block;
+    font-family:'Barlow Condensed',sans-serif;
+    font-size:11px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:#7a7f96;
+    margin-bottom:6px;
+}
+
+.form-group input{
+    width:100%;
+    padding:11px 14px;
+    border:1px solid #d0d3dc;
+    border-radius:6px;
+    font-family:'Barlow',sans-serif;
+    font-size:14px;
+    color:#1a1e2e;
+    background:#f8f9fb;
+    transition:all 0.2s;
+}
+
+.form-group input:focus{
+    outline:none;
+    border-color:#F7A600;
+    background:#ffffff;
+    box-shadow:0 0 0 3px rgba(247,166,0,0.12);
+}
+
+.btn-login{
+    width:100%;
+    padding:12px;
+    background:#002060;
+    color:#ffffff;
+    border:none;
+    border-radius:6px;
+    font-family:'Barlow Condensed',sans-serif;
+    font-size:15px;
+    font-weight:700;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    cursor:pointer;
+    transition:all 0.2s;
+    margin-top:6px;
+}
+
+.btn-login:hover{background:#003399;}
+
+.error-msg{
+    background:#fee2e2;
+    border:1px solid #fca5a5;
+    color:#dc2626;
+    padding:10px 14px;
+    border-radius:6px;
+    font-size:13px;
+    margin-bottom:18px;
+    text-align:center;
+}
+
+.role-info{
+    margin-top:20px;
+    padding:14px;
+    background:#f8f9fb;
+    border-radius:6px;
+    border:1px solid #e2e4ea;
+}
+
+.role-info p{
+    font-family:'Barlow Condensed',sans-serif;
+    font-size:11px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    color:#7a7f96;
+    margin-bottom:8px;
+}
+
+.role-row{
+    display:flex;
+    justify-content:space-between;
+    font-size:12px;
+    color:#1a1e2e;
+    padding:4px 0;
+    border-bottom:1px solid #e2e4ea;
+}
+
+.role-row:last-child{border-bottom:none;}
+
+.role-badge{
+    font-family:'Barlow Condensed',sans-serif;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:1px;
+    padding:2px 8px;
+    border-radius:10px;
+}
+
+.badge-admin{background:#dbeafe;color:#1d4ed8;}
+.badge-viewer{background:#dcfce7;color:#16a34a;}
+
+.footer-bar{
+    background:#002060;
+    color:rgba(255,255,255,0.5);
+    text-align:center;
+    padding:12px;
+    font-family:'Barlow Condensed',sans-serif;
+    font-size:11px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+}
+</style>
+</head>
+<body>
+
+<div class="top-bar"></div>
+
+<div class="login-wrap">
+    <div class="login-card">
+
+        <div class="login-header">
+            <img src="{{ url_for('static', filename='logo.png') }}">
+            <h1>Plant Open Issue Tracker</h1>
+            <p>Sujan Continental AVS Pvt Ltd</p>
+        </div>
+
+        <div class="gold-bar"></div>
+
+        <div class="login-body">
+
+            {% if error %}
+            <div class="error-msg">⚠ {{ error }}</div>
+            {% endif %}
+
+            <form method="POST" action="/login">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" name="username" placeholder="Enter username" required autofocus>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" placeholder="Enter password" required>
+                </div>
+                <button type="submit" class="btn-login">Login →</button>
+            </form>
+
+            <div class="role-info">
+                <p>Access Levels</p>
+                <div class="role-row">
+                    <span>admin</span>
+                    <span class="role-badge badge-admin">Full Access</span>
+                </div>
+                <div class="role-row">
+                    <span>sujan</span>
+                    <span class="role-badge badge-viewer">View Only</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="footer-bar">
+    © 2026 Sujan Continental AVS Pvt Ltd — Plant Open Issue Tracker
+</div>
+
+</body>
+</html>

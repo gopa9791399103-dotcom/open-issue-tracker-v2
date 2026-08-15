@@ -1,0 +1,1 @@
+web: gunicorn issue_tracker_routes:app

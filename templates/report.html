@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Issue Report — Plant Open Issue Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{
+    --gold:#F7A600;--gold2:#ffbe3d;--blue:#002060;
+    --bg:#f5f6fa;--surface:#fff;--border:#e2e4ea;
+    --text:#1a1e2e;--muted:#7a7f96;
+    --green:#16a34a;--red:#dc2626;--orange:#ea580c;--purple:#7c3aed;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+/* HEADER */
+.header{display:flex;align-items:center;padding:0 24px;height:60px;background:var(--blue);border-bottom:3px solid var(--gold);gap:12px;}
+.logo img{height:38px;flex-shrink:0;}
+.header-title{flex:1;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#fff;white-space:nowrap;}
+.header-title span{color:var(--gold);}
+.header-right{display:flex;gap:8px;flex-shrink:0;}
+.btn{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;border:none;cursor:pointer;padding:6px 14px;border-radius:4px;transition:all 0.2s;white-space:nowrap;}
+.btn-gold{background:var(--gold);color:var(--blue);}
+.btn-gold:hover{background:var(--gold2);}
+.btn-outline{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.3);}
+.btn-outline:hover{background:rgba(255,255,255,0.2);}
+
+/* FILTER BAR */
+.filter-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;box-shadow:0 2px 8px rgba(0,0,0,0.05);}
+.filter-bar label{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+.filter-bar input{padding:7px 12px;border:1px solid var(--border);border-radius:4px;font-family:'Barlow',sans-serif;font-size:13px;color:var(--text);background:var(--bg);}
+.filter-bar input:focus{outline:none;border-color:var(--gold);}
+.filter-bar select{padding:7px 12px;border:1px solid var(--border);border-radius:4px;font-family:'Barlow',sans-serif;font-size:13px;color:var(--text);background:var(--bg);cursor:pointer;}
+.filter-bar select:focus{outline:none;border-color:var(--gold);}
+.filter-group{display:flex;align-items:center;gap:8px;}
+.btn-run{background:var(--blue);color:white;border:none;padding:8px 20px;border-radius:4px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;letter-spacing:1px;cursor:pointer;transition:background 0.2s;}
+.btn-run:hover{background:#003399;}
+.btn-email{background:var(--gold);color:var(--blue);border:none;padding:8px 20px;border-radius:4px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;letter-spacing:1px;cursor:pointer;}
+.btn-email:hover{background:var(--gold2);}
+
+/* SUMMARY CARDS */
+.summary{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px;padding:20px 28px 0;}
+.sum-card{background:var(--surface);border-radius:8px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);border:1px solid var(--border);text-align:center;}
+.sum-label{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.sum-value{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;}
+.sum-value.total{color:var(--blue);}
+.sum-value.open{color:var(--red);}
+.sum-value.inprog{color:var(--orange);}
+.sum-value.closed{color:var(--green);}
+.sum-value.overdue{color:var(--purple);}
+
+/* CHARTS GRID */
+.charts-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;padding:20px 28px 80px;}
+.chart-card{background:var(--surface);border-radius:10px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,0.07);border:1px solid var(--border);}
+.chart-title{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--blue);margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--gold);}
+.chart-wrap{position:relative;height:260px;}
+
+/* REPORT DATE */
+.report-meta{padding:0 28px 12px;font-size:12px;color:var(--muted);}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(3px);}
+.modal-overlay.active{display:flex;}
+.modal{background:var(--surface);border-radius:10px;padding:28px;width:100%;max-width:520px;box-shadow:0 20px 60px rgba(0,0,0,0.2);}
+.modal-title{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--blue);margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid var(--gold);}
+.form-group{margin-bottom:14px;}
+.form-group label{display:block;font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.form-group input,.form-group textarea{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:4px;font-family:'Barlow',sans-serif;font-size:13px;color:var(--text);}
+.form-group input:focus,.form-group textarea:focus{outline:none;border-color:var(--gold);}
+.form-group textarea{resize:vertical;min-height:80px;}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;padding-top:14px;border-top:1px solid var(--border);}
+.btn-cancel{padding:9px 20px;background:#f5f5f5;color:#555;border:none;border-radius:6px;font-family:'Barlow Condensed',sans-serif;font-size:13px;cursor:pointer;}
+.btn-send{padding:9px 24px;background:var(--gold);color:var(--blue);border:none;border-radius:6px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;cursor:pointer;}
+.btn-send:hover{background:var(--gold2);}
+
+/* EMPTY */
+.empty{text-align:center;padding:60px;color:var(--muted);grid-column:1/-1;}
+.empty .icon{font-size:48px;margin-bottom:12px;}
+
+/* LOADING */
+.loading{text-align:center;padding:60px;color:var(--muted);grid-column:1/-1;}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+    <div class="logo"><img src="{{ url_for('static', filename='logo.png') }}"></div>
+    <div class="header-title">Issue <span>Report</span></div>
+    <div class="header-right">
+        <button class="btn btn-gold" onclick="openEmailModal()">📧 Email Report</button>
+        <button class="btn btn-outline" onclick="location.href='/'">⬅ Back</button>
+    </div>
+</div>
+
+<!-- FILTER BAR -->
+<div class="filter-bar">
+    <div class="filter-group">
+        <label>From</label>
+        <input type="date" id="dateFrom">
+    </div>
+    <div class="filter-group">
+        <label>To</label>
+        <input type="date" id="dateTo">
+    </div>
+    <div class="filter-group">
+        <label>Department</label>
+        <select id="filterDept">
+            <option value="">All Departments</option>
+            <option>Quality</option><option>Production</option><option>Maintenance</option>
+            <option>Safety</option><option>Store</option><option>HR</option>
+            <option>Dispatch</option><option>Tooling</option>
+        </select>
+    </div>
+    <div class="filter-group">
+        <label>Priority</label>
+        <select id="filterPriority">
+            <option value="">All Priorities</option>
+            <option>High</option><option>Medium</option><option>Low</option>
+        </select>
+    </div>
+    <button class="btn-run" onclick="loadReport()">📊 Generate Report</button>
+    <button class="btn-email" onclick="openEmailModal()">📧 Email Report</button>
+</div>
+
+<!-- REPORT META -->
+<div class="report-meta" id="reportMeta"></div>
+
+<!-- SUMMARY CARDS -->
+<div class="summary" id="summaryCards" style="display:none;">
+    <div class="sum-card"><div class="sum-label">Total Issues</div><div class="sum-value total" id="s-total">0</div></div>
+    <div class="sum-card"><div class="sum-label">Open</div><div class="sum-value open" id="s-open">0</div></div>
+    <div class="sum-card"><div class="sum-label">In Progress</div><div class="sum-value inprog" id="s-inprog">0</div></div>
+    <div class="sum-card"><div class="sum-label">Closed</div><div class="sum-value closed" id="s-closed">0</div></div>
+    <div class="sum-card"><div class="sum-label">Overdue</div><div class="sum-value overdue" id="s-overdue">0</div></div>
+    <div class="sum-card"><div class="sum-label">High Priority</div><div class="sum-value open" id="s-high">0</div></div>
+</div>
+
+<!-- CHARTS -->
+<div class="charts-grid" id="chartsGrid">
+    <div class="empty"><div class="icon">📊</div><p>Select filters and click Generate Report</p></div>
+</div>
+
+<!-- EMAIL MODAL -->
+<div class="modal-overlay" id="emailModal">
+    <div class="modal">
+        <div class="modal-title">📧 Email Report</div>
+        <div class="form-group">
+            <label>To (Email Address) *</label>
+            <input type="email" id="emailTo" placeholder="recipient@company.com">
+        </div>
+        <div class="form-group">
+            <label>CC (optional)</label>
+            <input type="email" id="emailCc" placeholder="cc@company.com">
+        </div>
+        <div class="form-group">
+            <label>Subject</label>
+            <input type="text" id="emailSubject" value="Plant Open Issue Tracker — Report">
+        </div>
+        <div class="form-group">
+            <label>Message (optional)</label>
+            <textarea id="emailMessage" placeholder="Add a note with the report..."></textarea>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeEmailModal()">Cancel</button>
+            <button class="btn-send" onclick="sendEmailReport()">📧 Send Report</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ── Charts refs ────────────────────────────────────────────────
+let chartStatus = null, chartDept = null, chartPriority = null;
+let reportData  = null;
+
+// ── Color palettes ─────────────────────────────────────────────
+const STATUS_COLORS   = ['#fee2e2','#ffedd5','#dcfce7','#ede9fe','#dbeafe'];
+const STATUS_BORDERS  = ['#dc2626','#ea580c','#16a34a','#7c3aed','#2563eb'];
+const DEPT_COLORS     = ['#bfdbfe','#bbf7d0','#fef9c3','#fce7f3','#e0e7ff','#ffedd5','#dcfce7','#fef3c7'];
+const DEPT_BORDERS    = ['#2563eb','#16a34a','#ca8a04','#db2777','#4f46e5','#ea580c','#059669','#d97706'];
+const PRIO_COLORS     = ['#fee2e2','#ffedd5','#dcfce7'];
+const PRIO_BORDERS    = ['#dc2626','#ea580c','#16a34a'];
+
+// ── Set default dates (current month) ─────────────────────────
+function setDefaultDates(){
+    const now   = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    const end   = new Date(now.getFullYear(), now.getMonth()+1, 0);
+    document.getElementById('dateFrom').value = start.toISOString().split('T')[0];
+    document.getElementById('dateTo').value   = end.toISOString().split('T')[0];
+}
+
+// ── Load Report ────────────────────────────────────────────────
+async function loadReport(){
+    const from  = document.getElementById('dateFrom').value;
+    const to    = document.getElementById('dateTo').value;
+    const dept  = document.getElementById('filterDept').value;
+    const prio  = document.getElementById('filterPriority').value;
+
+    // Show loading
+    document.getElementById('chartsGrid').innerHTML =
+        '<div class="loading">⏳ Generating report...</div>';
+    document.getElementById('summaryCards').style.display = 'none';
+
+    const params = new URLSearchParams({from, to, dept, priority: prio});
+    const res    = await fetch(`/get_report_data?${params}`);
+    reportData   = await res.json();
+
+    if(reportData.error){
+        document.getElementById('chartsGrid').innerHTML =
+            `<div class="empty"><div class="icon">❌</div><p>${reportData.error}</p></div>`;
+        return;
+    }
+
+    updateSummary(reportData);
+    renderCharts(reportData);
+    updateMeta(from, to, dept, prio, reportData.total);
+}
+
+// ── Update summary cards ───────────────────────────────────────
+function updateSummary(d){
+    document.getElementById('summaryCards').style.display = 'grid';
+    document.getElementById('s-total').textContent  = d.total;
+    document.getElementById('s-open').textContent   = d.by_status['Open']||0;
+    document.getElementById('s-inprog').textContent = d.by_status['In Progress']||0;
+    document.getElementById('s-closed').textContent = d.by_status['Closed']||0;
+    document.getElementById('s-overdue').textContent= d.overdue||0;
+    document.getElementById('s-high').textContent   = d.by_priority['High']||0;
+}
+
+// ── Render 3 pie charts ────────────────────────────────────────
+function renderCharts(d){
+    // Destroy old
+    if(chartStatus)   chartStatus.destroy();
+    if(chartDept)     chartDept.destroy();
+    if(chartPriority) chartPriority.destroy();
+
+    document.getElementById('chartsGrid').innerHTML = `
+        <div class="chart-card">
+            <div class="chart-title">By Status</div>
+            <div class="chart-wrap"><canvas id="chartStatus"></canvas></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">By Department</div>
+            <div class="chart-wrap"><canvas id="chartDept"></canvas></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">By Priority</div>
+            <div class="chart-wrap"><canvas id="chartPriority"></canvas></div>
+        </div>`;
+
+    const opts = (title) => ({
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins:{
+            legend:{ position:'bottom', labels:{font:{family:'Barlow',size:12},padding:12} },
+            title:{ display:false }
+        }
+    });
+
+    // Status chart
+    const statusLabels = Object.keys(d.by_status);
+    const statusVals   = Object.values(d.by_status);
+    chartStatus = new Chart(document.getElementById('chartStatus').getContext('2d'),{
+        type:'pie',
+        data:{
+            labels: statusLabels,
+            datasets:[{
+                data: statusVals,
+                backgroundColor: STATUS_COLORS.slice(0,statusLabels.length),
+                borderColor:     STATUS_BORDERS.slice(0,statusLabels.length),
+                borderWidth: 2
+            }]
+        },
+        options: opts('Status')
+    });
+
+    // Dept chart
+    const deptLabels = Object.keys(d.by_dept);
+    const deptVals   = Object.values(d.by_dept);
+    chartDept = new Chart(document.getElementById('chartDept').getContext('2d'),{
+        type:'pie',
+        data:{
+            labels: deptLabels,
+            datasets:[{
+                data: deptVals,
+                backgroundColor: DEPT_COLORS.slice(0,deptLabels.length),
+                borderColor:     DEPT_BORDERS.slice(0,deptLabels.length),
+                borderWidth: 2
+            }]
+        },
+        options: opts('Dept')
+    });
+
+    // Priority chart
+    const prioLabels = Object.keys(d.by_priority);
+    const prioVals   = Object.values(d.by_priority);
+    chartPriority = new Chart(document.getElementById('chartPriority').getContext('2d'),{
+        type:'pie',
+        data:{
+            labels: prioLabels,
+            datasets:[{
+                data: prioVals,
+                backgroundColor: PRIO_COLORS.slice(0,prioLabels.length),
+                borderColor:     PRIO_BORDERS.slice(0,prioLabels.length),
+                borderWidth: 2
+            }]
+        },
+        options: opts('Priority')
+    });
+}
+
+// ── Update meta line ───────────────────────────────────────────
+function updateMeta(from, to, dept, prio, total){
+    let text = `📊 Report generated on ${new Date().toLocaleDateString('en-IN')} at ${new Date().toLocaleTimeString('en-IN')}`;
+    if(from||to) text += ` &nbsp;|&nbsp; Period: ${from||'All'} → ${to||'All'}`;
+    if(dept)     text += ` &nbsp;|&nbsp; Dept: ${dept}`;
+    if(prio)     text += ` &nbsp;|&nbsp; Priority: ${prio}`;
+    text += ` &nbsp;|&nbsp; <b>${total}</b> issues`;
+    document.getElementById('reportMeta').innerHTML = text;
+}
+
+// ── Email Modal ────────────────────────────────────────────────
+function openEmailModal(){
+    if(!reportData){
+        alert('Please generate the report first, then email it.');
+        return;
+    }
+    const now = new Date();
+    document.getElementById('emailSubject').value =
+        `Plant Open Issue Tracker Report — ${now.toLocaleDateString('en-IN')}`;
+    document.getElementById('emailModal').classList.add('active');
+}
+function closeEmailModal(){
+    document.getElementById('emailModal').classList.remove('active');
+}
+document.getElementById('emailModal').addEventListener('click', e=>{
+    if(e.target===document.getElementById('emailModal')) closeEmailModal();
+});
+
+async function sendEmailReport(){
+    const to      = document.getElementById('emailTo').value.trim();
+    const cc      = document.getElementById('emailCc').value.trim();
+    const subject = document.getElementById('emailSubject').value.trim();
+    const message = document.getElementById('emailMessage').value.trim();
+
+    if(!to){ alert('Please enter recipient email.'); return; }
+
+    const btn = document.querySelector('.btn-send');
+    btn.textContent='Sending...'; btn.disabled=true;
+
+    const res = await fetch('/send_report_email', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+            to, cc, subject, message,
+            report_data: reportData,
+            date_from: document.getElementById('dateFrom').value,
+            date_to:   document.getElementById('dateTo').value,
+            dept:      document.getElementById('filterDept').value,
+            priority:  document.getElementById('filterPriority').value,
+        })
+    });
+    const r = await res.json();
+    btn.textContent='📧 Send Report'; btn.disabled=false;
+    alert(r.message);
+    if(r.success) closeEmailModal();
+}
+
+// ── Init ───────────────────────────────────────────────────────
+setDefaultDates();
+loadReport();  // auto-load on open with current month
+</script>
+</body>
+</html>
