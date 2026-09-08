@@ -1,13 +1,11 @@
 import os
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 from functools import wraps
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 import mysql.connector
 from twilio.rest import Client as TwilioClient
 from urllib.parse import urlparse
+import requests
 
 # ── APP SETUP ─────────────────────────────────────────────────
 app = Flask(__name__)
@@ -19,15 +17,12 @@ USERS = {
     "sujan": {"password": "sujan123", "role": "viewer"},
 }
 
-# ── EMAIL CONFIG ──────────────────────────────────────────────
-# All values below MUST be set as environment variables (Railway → service → Variables).
+# ── EMAIL CONFIG (Brevo API — set via Railway env vars) ────────
 # No secrets are hardcoded here so this file is safe to commit to a public repo.
-EMAIL_HOST     = "smtp.gmail.com"
-EMAIL_PORT     = 587
-EMAIL_USER     = os.environ.get('EMAIL_USER')
-EMAIL_PASSWORD = os.environ.get('EMAIL_PASSWORD')
-EMAIL_FROM     = f"Sujan Continental AVS <{EMAIL_USER}>"
-ADMIN_EMAIL    = EMAIL_USER
+BREVO_API_KEY = os.environ.get('BREVO_API_KEY')
+MAIL_FROM     = os.environ.get('MAIL_FROM', 'gopa9791399103@gmail.com')
+EMAIL_FROM    = f"Sujan Continental AVS <{MAIL_FROM}>"
+ADMIN_EMAIL   = MAIL_FROM
 
 # ── TWILIO CONFIG ─────────────────────────────────────────────
 TWILIO_SID     = os.environ.get('TWILIO_SID')
@@ -45,6 +40,16 @@ if mysql_url:
         "user":     parsed.username,
         "password": parsed.password,
         "database": parsed.path.lstrip('/')
+    }
+elif os.environ.get('MYSQLHOST'):
+    # Railway sometimes injects individual MYSQLHOST/MYSQLUSER/etc.
+    # instead of (or in addition to) a combined MYSQL_URL.
+    db_config = {
+        "host":     os.environ.get('MYSQLHOST'),
+        "port":     int(os.environ.get('MYSQLPORT', '3306')),
+        "user":     os.environ.get('MYSQLUSER', 'root'),
+        "password": os.environ.get('MYSQLPASSWORD', ''),
+        "database": os.environ.get('MYSQLDATABASE', 'railway')
     }
 else:
     db_config = {
@@ -677,18 +682,37 @@ def send_report_email():
 </td></tr>
 </table></td></tr></table></body></html>"""
 
-        # ── Send via Gmail SMTP ───────────────────────────────
-        msg = MIMEMultipart('alternative')
-        msg['From'] = EMAIL_FROM; msg['To'] = to
-        if cc: msg['Cc'] = cc
-        msg['Subject'] = subject
-        msg.attach(MIMEText(html, 'html'))
-        recipients = [to] + ([cc] if cc else [])
-        server = smtplib.SMTP(EMAIL_HOST, EMAIL_PORT, timeout=30)
-        server.ehlo(); server.starttls()
-        server.login(EMAIL_USER, EMAIL_PASSWORD)
-        server.sendmail(EMAIL_USER, recipients, msg.as_string())
-        server.quit()
+        # ── Send via Brevo API ─────────────────────────────────
+        recipients = [{"email": to}]
+        if cc:
+            recipients_cc = [{"email": cc}]
+        else:
+            recipients_cc = None
+
+        payload = {
+            "sender": {"email": MAIL_FROM, "name": "Sujan Continental AVS"},
+            "to": recipients,
+            "subject": subject,
+            "htmlContent": html
+        }
+        if recipients_cc:
+            payload["cc"] = recipients_cc
+
+        if not BREVO_API_KEY:
+            raise Exception("BREVO_API_KEY not set")
+
+        resp = requests.post(
+            "https://api.brevo.com/v3/smtp/email",
+            headers={
+                "api-key": BREVO_API_KEY,
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            json=payload,
+            timeout=15
+        )
+        if resp.status_code not in (200, 201):
+            raise Exception(f"Brevo API {resp.status_code}: {resp.text}")
         print(f"Report email sent to {to}")
 
         return jsonify({"success": True, "message": f"Report sent to {to}" + (f" and {cc}" if cc else "")})
@@ -715,23 +739,34 @@ def _send_html_email(to, subject, body_text):
       </div>
     </div></body></html>"""
 
-        msg = MIMEMultipart('alternative')
-        msg['From'] = EMAIL_FROM
-        msg['To'] = to
-        msg['Subject'] = subject
-        msg.attach(MIMEText(body_text, 'plain'))
-        msg.attach(MIMEText(html, 'html'))
+        if not BREVO_API_KEY:
+            print("[MAIL ERROR] BREVO_API_KEY not set")
+            return
 
-        server = smtplib.SMTP(EMAIL_HOST, EMAIL_PORT, timeout=30)
-        server.ehlo(); server.starttls()
-        server.login(EMAIL_USER, EMAIL_PASSWORD)
-        server.sendmail(EMAIL_USER, [to], msg.as_string())
-        server.quit()
-        print(f"Email sent to {to}")
+        resp = requests.post(
+            "https://api.brevo.com/v3/smtp/email",
+            headers={
+                "api-key": BREVO_API_KEY,
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            json={
+                "sender": {"email": MAIL_FROM, "name": "Sujan Continental AVS"},
+                "to": [{"email": to}],
+                "subject": subject,
+                "htmlContent": html,
+                "textContent": body_text
+            },
+            timeout=15
+        )
+        if resp.status_code in (200, 201):
+            print(f"Email sent to {to}")
+        else:
+            print(f"EMAIL ERROR: {resp.status_code} {resp.text}")
     except Exception as e:
         print(f"EMAIL ERROR: {e}")
-        
-        
+
+
 def _send_whatsapp(to_phone, message):
     try:
         print(f"WHATSAPP: Would send to {to_phone}")
@@ -775,7 +810,7 @@ Remark  : {remark}
         body += f"Admin Note  : {admin_remark}\n"
     body += "\nPlant Open Issue Tracker — Sujan Continental AVS Pvt Ltd"
     _send_html_email(user_email, subject, body)
-    
+
 @app.route("/debug")
 def debug():
     return jsonify({
